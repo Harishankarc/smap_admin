@@ -7,8 +7,8 @@ interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
-
-  setAuth: (user: AdminUserModel, accessToken: string, refreshToken: string) => void
+  role: string | null
+  setAuth: (user: AdminUserModel, accessToken: string, refreshToken: string, role: string) => void
   setTokens: (accessToken: string, refreshToken: string) => void
   updateUser: (user: Partial<AdminUserModel>) => void
   logout: () => void
@@ -21,7 +21,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
-
+      role: null,
       setAuth: (user, accessToken, refreshToken) =>
         set({ user, accessToken, refreshToken, isAuthenticated: true }),
 
@@ -42,6 +42,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
+        role: state.role,
         isAuthenticated: state.isAuthenticated,
       }),
     },

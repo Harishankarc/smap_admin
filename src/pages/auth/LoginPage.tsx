@@ -9,9 +9,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
+
 const schema = z.object({
-  email:      z.string().email('Enter a valid email address'),
-  password:   z.string().min(1, 'Password is required'),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Enter a valid email address"),
+
+  password: z
+    .string()
+    .min(1, "Password is required"),
+
   rememberMe: z.boolean(),
 })
 type FormData = z.infer<typeof schema>
@@ -25,18 +33,17 @@ export default function LoginPage() {
     defaultValues: { email: '', password: '', rememberMe: false },
   })
 
-  const onSubmit = (data: FormData) => loginMutation.mutate(data)
+  function onSubmit (data: FormData) {
+    loginMutation.mutate(data)
+  }
 
   return (
     <div className="min-h-screen flex">
 
-      {/* ── Left panel ── */}
       <div className="hidden lg:flex w-[420px] shrink-0 flex-col bg-brand-800 p-10 relative overflow-hidden">
-        {/* Decorative blobs */}
         <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-brand-700 opacity-40 pointer-events-none" />
         <div className="absolute bottom-10 -right-20 w-72 h-72 rounded-full bg-brand-900 opacity-60 pointer-events-none" />
 
-        {/* Logo */}
         <div className="relative flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-brand-400 flex items-center justify-center shrink-0">
             <ShieldCheck size={20} className="text-brand-900" />
@@ -47,7 +54,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Headline */}
         <div className="relative mt-auto">
           <h2 className="text-white text-3xl font-semibold leading-snug">
             Smart Monitoring<br />&amp; Analytics<br />Platform
@@ -65,11 +71,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Right panel ── */}
       <div className="flex-1 flex items-center justify-center p-8 bg-bg">
         <div className="w-full max-w-md">
 
-          {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
             <div className="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center">
               <ShieldCheck size={18} className="text-white" />
@@ -82,14 +86,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
 
-            {/* Email */}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-text-primary">Email address</Label>
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@company.com"
+                placeholder=""
                 {...register('email')}
                 className={cn(errors.email && 'border-red-400 focus-visible:ring-red-400')}
               />
@@ -98,7 +101,6 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Password */}
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-text-primary">Password</Label>
               <div className="relative">
@@ -106,7 +108,7 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder=""
                   {...register('password')}
                   className={cn('pr-10', errors.password && 'border-red-400 focus-visible:ring-red-400')}
                 />
@@ -124,19 +126,6 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Remember me */}
-            <label className="flex items-center gap-2.5 cursor-pointer group select-none">
-              <input
-                type="checkbox"
-                {...register('rememberMe')}
-                className="w-4 h-4 rounded border-border accent-brand-600"
-              />
-              <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
-                Remember me for 30 days
-              </span>
-            </label>
-
-            {/* Submit */}
             <Button
               type="submit"
               disabled={loginMutation.isPending}

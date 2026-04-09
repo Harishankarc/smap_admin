@@ -1,3 +1,5 @@
+import { axiosInstance } from '@/lib/axios'
+import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
@@ -17,21 +19,13 @@ interface LoginResponse {
   user: AdminUserModel
 }
 
-async function mockLogin(payload: LoginPayload): Promise<LoginResponse> {
-  await new Promise((r) => setTimeout(r, 800))
-  return {
-    accessToken: 'mock-access-token',
-    refreshToken: 'mock-refresh-token',
-    user: {
-      adminId: 'admin-001',
-      fullName: 'Demo Admin',
-      email: payload.email,
-      departmentId: 'dept-001',
-      departmentName: 'Engineering',
-      role: 'admin',
-      lastLogin: new Date().toISOString(),
-    },
-  }
+async function adminLogin(payload: LoginPayload): Promise<LoginResponse> {
+  const { data } = await axiosInstance.post<LoginResponse>('/api/auth/admin/login', {
+    email: payload.email,
+    password: payload.password,
+  })
+  console.log(data)
+  return data
 }
 
 export function useAuth() {
@@ -39,14 +33,18 @@ export function useAuth() {
   const navigate = useNavigate()
 
   const loginMutation = useMutation({
-    mutationFn: mockLogin,
+    mutationFn: adminLogin,
     onSuccess: ({ user, accessToken, refreshToken }) => {
-      setAuth(user, accessToken, refreshToken)
+      setAuth(user, accessToken, refreshToken, user.role)
+      console.log(user)
       navigate(ROUTES.DASHBOARD)
-      toast(`Welcome back, ${user.fullName.split(' ')[0]}!`, 'success')
+      toast(`Welcome back!!`, 'success')
     },
-    onError: () => {
-      toast('Login failed. Please try again.', 'error')
+    onError: (error: unknown) => {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.error ?? 'Login failed'
+        : 'Login failed. Please try again.'
+      toast(message, 'error')
     },
   })
 

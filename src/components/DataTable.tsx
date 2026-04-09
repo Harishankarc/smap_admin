@@ -15,7 +15,8 @@ import { cn } from '@/lib/utils'
 
 interface Props<T> {
   data: T[]
-  columns: ColumnDef<T, unknown>[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  columns: ColumnDef<T, any>[]
   loading?: boolean
   pageSize?: number
   showPagination?: boolean
