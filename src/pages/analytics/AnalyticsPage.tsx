@@ -249,7 +249,7 @@ const rows = [
   },
   {
     label: 'Dept Size',
-    value: summary?.totalUsers ?? 0,
+    value: summary?.totalEmployees ?? 0,
     unit: 'members',
   },
 ]
@@ -523,7 +523,7 @@ const {
         <KpiCard title="Avg Attendance Rate" value={avgRate}     unit="%"  icon={CalendarCheck} color="teal"  trend={{ value: 2.1,  label: 'vs prev period' }} />
         <KpiCard title="Avg Daily Duration"  value={avgDuration} unit="hrs" icon={Clock}         color="green" trend={{ value: 0.3,  label: 'vs prev period' }} />
         <KpiCard title="Total Late Arrivals" value={totalLate}              icon={AlertTriangle}  color="amber" trend={{ value: -1.5, label: 'vs prev period' }} />
-        <KpiCard title="Dept Size"           value={summary?.totalUsers?? 0}          unit="members" icon={Users}     color="teal" />
+        <KpiCard title="Dept Size" value={summary?.data?.totalEmployees ?? 0}          unit="members" icon={Users}     color="teal" />
       </div>
 
       {/* ── Charts row 1: Attendance Rate + Heatmap ── */}
@@ -616,7 +616,7 @@ const {
       </div>
 
       {/* ── Bottom row: Top Performers + Summary ── */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <Card className="col-span-3">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">Top Performers</CardTitle>
@@ -627,20 +627,7 @@ const {
           </CardContent>
         </Card>
 
-        <Card className="col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Summary</CardTitle>
-            <CardDescription className="text-xs mt-0.5">
-              {period === 'today' ? "Today's stats" : period === 'week' ? 'Last 7 days' : period === 'month' ? 'Last 30 days' : period === '3months' ? 'Last 90 days' : 'Last 365 days'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-<SummaryTable
-  period={period}
-  days={days}
-  summary={summary}
-/>          </CardContent>
-        </Card>
+
       </div>
     </div>
   )
