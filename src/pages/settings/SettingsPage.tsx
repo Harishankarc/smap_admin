@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/stores/uiStore'
 import { cn, getInitials } from '@/lib/utils'
 import type { NotificationRulesModel, DisplayPrefsModel } from '@/types'
+import { axiosInstance } from '@/lib/axios'
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -105,26 +106,98 @@ function ProfileTab() {
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   })
 
-  async function onSaveProfile(data: ProfileForm) {
-    setSavingProfile(true)
-    await new Promise(r => setTimeout(r, 800))
-    updateUser({ fullName: data.fullName, email: data.email, phone: data.phone })
-    toast('Profile updated successfully', 'success')
-    setSavingProfile(false)
+  async function onSaveProfile(
+  data: ProfileForm
+) {
+
+  try {
+
+    setSavingProfile(
+      true
+    );
+
+    const res =
+      await axiosInstance.patch(
+        '/auth/admin/profile',
+        data
+      );
+
+    updateUser(
+      res.data
+    );
+
+    toast(
+      'Profile updated successfully',
+      'success'
+    );
+
+  } catch (e: any) {
+
+    toast(
+      e.response?.data?.error ||
+      'Failed to update profile',
+      'error'
+    );
+
+  } finally {
+
+    setSavingProfile(
+      false
+    );
+
+  }
+}
+
+ async function onChangePassword(
+  data: PasswordForm
+) {
+
+  try {
+
+    setSavingPassword(
+      true
+    );
+
+    await axiosInstance.patch(
+      '/auth/admin/change-password',
+      {
+        currentPassword:
+          data.currentPassword,
+
+        newPassword:
+          data.newPassword
+      }
+    );
+
+    toast(
+      'Password changed successfully',
+      'success'
+    );
+
+    passwordForm.reset();
+
+  } catch (e: any) {
+
+    toast(
+      e.response?.data?.error ||
+      'Failed to update password',
+      'error'
+    );
+
+  } finally {
+
+    setSavingPassword(
+      false
+    );
+
   }
 
-  async function onChangePassword(_data: PasswordForm) {
-    setSavingPassword(true)
-    await new Promise(r => setTimeout(r, 800))
-    toast('Password changed successfully', 'success')
-    passwordForm.reset()
-    setSavingPassword(false)
-  }
+}
 
   return (
     <div className="space-y-6">
       {/* Avatar */}
-      <Card>
+      {/* <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Profile Photo</CardTitle>
           <CardDescription className="text-xs">Your photo appears across the admin portal</CardDescription>
@@ -144,7 +217,7 @@ function ProfileTab() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Profile details */}
       <Card>
@@ -435,8 +508,8 @@ type Tab = 'profile' | 'notifications' | 'display'
 
 const TABS: { value: Tab; label: string; icon: typeof User }[] = [
   { value: 'profile',       label: 'My Profile',          icon: User },
-  { value: 'notifications', label: 'Notification Rules',  icon: Bell },
-  { value: 'display',       label: 'Display Preferences', icon: Monitor },
+  // { value: 'notifications', label: 'Notification Rules',  icon: Bell },
+  // { value: 'display',       label: 'Display Preferences', icon: Monitor },
 ]
 
 export default function SettingsPage() {

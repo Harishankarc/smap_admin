@@ -65,6 +65,8 @@ const columns = [
   }),
 ]
 
+
+
 function LiveFeedItem({ event }: { event: RecognitionEvent }) {
   return (
     <div className="flex items-center gap-3 py-2.5 border-b last:border-0 animate-fade-in">
@@ -105,11 +107,13 @@ function CustomTooltip({ active, payload, label }: any) {
   )
 }
 
+
+
+
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
-  const [liveFeed, setLiveFeed] = useState<RecognitionEvent[]>(mockLiveFeed)
 
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['dashboard-kpi'],
@@ -119,34 +123,35 @@ export default function DashboardPage() {
     },
   })
   const { data: todayRows = [], isLoading: tableLoading } = useQuery({
-    queryKey: ['dashboard-today'],
-    queryFn: async () => mockTodayAttendance,
-  })
-  const { data: hourly = [] } = useQuery({
-    queryKey: ['dashboard-hourly'],
-    queryFn: async () => mockHourlyData,
-  })
+  queryKey: ['dashboard-attendance'],
+  queryFn: async () => {
+    const res = await axiosInstance.get('/dashboard/admin/attendance-today')
+    return res.data
+  },
+})
 
-  useEffect(() => {
-    const names = ['Arjun Sharma', 'Deepa Pillai', 'Meena Suresh', 'Vikram Das']
-    const cameras = ['Main Entrance', 'Floor 2 Entry', 'Parking Entry']
-    const timer = setInterval(() => {
-      const isKnown = Math.random() > 0.25
-      const newEvent: RecognitionEvent = {
-        eventId: `live-${Date.now()}`,
-        cameraId: 'c1',
-        cameraName: cameras[Math.floor(Math.random() * cameras.length)],
-        userId: isKnown ? String(Math.ceil(Math.random() * 10)) : undefined,
-        fullName: isKnown ? names[Math.floor(Math.random() * names.length)] : undefined,
-        type: isKnown ? 'known' : 'unknown',
-        status: isKnown ? 'present' : undefined,
-        timestamp: new Date().toISOString(),
-        confidence: isKnown ? 0.9 + Math.random() * 0.09 : 0.3 + Math.random() * 0.2,
-      }
-      setLiveFeed((prev) => [newEvent, ...prev].slice(0, 20))
-    }, 8000)
-    return () => clearInterval(timer)
-  }, [])
+const { data: hourly = [] } = useQuery({
+  queryKey: ['dashboard-hourly'],
+  queryFn: async () => {
+    const res = await axiosInstance.get('/dashboard/admin/hourly-activity')
+    return res.data
+  },
+})
+
+const { data: liveFeed = [] } = useQuery({
+  queryKey: ['dashboard-live-feed'],
+  queryFn: async () => {
+    const res = await axiosInstance.get(
+      '/dashboard/admin/live-feed'
+    )
+
+    return res.data
+  },
+
+  refetchInterval: 15000,
+})
+
+
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
@@ -261,7 +266,7 @@ export default function DashboardPage() {
           <Separator />
 
           <CardContent className="flex-1 overflow-y-auto max-h-80 pt-2 px-4">
-            {liveFeed.map((event) => (
+            {liveFeed.map((event : any) => (
               <LiveFeedItem key={event.eventId} event={event} />
             ))}
           </CardContent>

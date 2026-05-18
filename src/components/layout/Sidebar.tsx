@@ -11,14 +11,14 @@ import { useUIStore } from '@/stores/uiStore'
 
 const NAV = [
   { label: 'Dashboard',      icon: LayoutDashboard, to: ROUTES.DASHBOARD },
-  { label: 'Live Monitor',   icon: MonitorPlay,     to: ROUTES.LIVE_MONITOR },
+  // { label: 'Live Monitor',   icon: MonitorPlay,     to: ROUTES.LIVE_MONITOR },
   { divider: 'My Department' },
   { label: 'Attendance',     icon: CalendarCheck,   to: ROUTES.ATTENDANCE },
   { label: 'My Users',       icon: Users,           to: ROUTES.USERS },
   { divider: 'Insights' },
   { label: 'Analytics',      icon: BarChart3,       to: ROUTES.ANALYTICS },
   { divider: 'Security' },
-  { label: 'Unknown Faces',  icon: UserX,           to: ROUTES.UNKNOWN_FACES },
+  // { label: 'Unknown Faces',  icon: UserX,           to: ROUTES.UNKNOWN_FACES },
   { divider: '' },
   { label: 'Notifications',  icon: Bell,            to: ROUTES.NOTIFICATIONS },
   { label: 'Settings',       icon: Settings,        to: ROUTES.SETTINGS },

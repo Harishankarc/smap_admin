@@ -58,6 +58,10 @@ export function UsersTable({ data }: Props) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
 
+    React.useEffect(() => {
+  table.setPageIndex(0)
+}, [globalFilter])
+
     const columns: ColumnDef<UserModel>[] = [
 
         {
@@ -86,10 +90,10 @@ export function UsersTable({ data }: Props) {
             },
         },
 
-        {
-            accessorKey: "designation",
-            header: "Designation",
-        },
+        // {
+        //     accessorKey: "designation",
+        //     header: "Designation",
+        // },
 
         {
             accessorKey: "faceRegistered",
@@ -113,47 +117,68 @@ export function UsersTable({ data }: Props) {
             },
         },
 
-        {
-            id: "actions",
+//         {
+//             id: "actions",
 
-            cell: ({ row }) => {
+//             cell: ({ row }) => {
 
-                const u = row.original
+//                 const u = row.original
 
-                return (
+//                 return (
 
-                    <DropdownMenu>
+//                     <DropdownMenu>
 
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
+//                         <DropdownMenuTrigger asChild>
+//                             <Button variant="ghost" size="icon">
+//                                 <MoreHorizontal className="h-4 w-4" />
+//                             </Button>
+//                         </DropdownMenuTrigger>
 
-                        <DropdownMenuContent align="end">
+//                         <DropdownMenuContent align="end">
 
-                            <DropdownMenuItem
-                                onClick={() =>
-                                    navigate(userDetailPath(u.userId))
-                                }
-                            >
-                                View Profile
-                            </DropdownMenuItem>
+//                             <DropdownMenuItem>
+//   View Profile
+// </DropdownMenuItem>
 
-                        </DropdownMenuContent>
+// <DropdownMenuItem>
+//   Register Face
+// </DropdownMenuItem>
 
-                    </DropdownMenu>
-                )
-            },
-        },
+// <DropdownMenuItem>
+//   View Attendance
+// </DropdownMenuItem>
+
+// <DropdownMenuItem>
+//   Edit User
+// </DropdownMenuItem>
+
+// <DropdownMenuItem className="text-red-500">
+//   Disable User
+// </DropdownMenuItem>
+
+//                         </DropdownMenuContent>
+
+//                     </DropdownMenu>
+//                 )
+//             },
+//         },
     ]
+
+    const filteredData = React.useMemo(() => {
+  return data.filter((u) =>
+    u.fullName
+      .toLowerCase()
+      .includes(globalFilter.toLowerCase()) ||
+
+    u.userId
+      .toLowerCase()
+      .includes(globalFilter.toLowerCase())
+  )
+}, [data, globalFilter])
 
     const table = useReactTable({
 
-        data: data.filter((u) =>
-            u.fullName.toLowerCase().includes(globalFilter.toLowerCase()) ||
-            u.userId.includes(globalFilter)
-        ),
+        data: filteredData,
 
         columns,
 

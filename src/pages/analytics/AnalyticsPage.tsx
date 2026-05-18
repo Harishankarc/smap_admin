@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageHeader } from '@/components/PageHeader'
 import { cn } from '@/lib/utils'
+import { axiosInstance } from '@/lib/axios'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -216,16 +217,42 @@ function TopPerformersChart({ data }: { data: typeof TOP_PERFORMERS }) {
 
 // ─── Summary table ────────────────────────────────────────────────────────────
 
-function SummaryTable({ period, days }: { period: Period; days: number }) {
-  const rows = [
-    { label: 'Total Working Days',     value: Math.min(days, 22),   unit: 'days' },
-    { label: 'Avg Attendance Rate',    value: '83.4',               unit: '%' },
-    { label: 'Total Present Days',     value: Math.round(days * 0.83 * 6), unit: 'person-days' },
-    { label: 'Total Absent Days',      value: Math.round(days * 0.17 * 6), unit: 'person-days' },
-    { label: 'Total Late Arrivals',    value: Math.round(days * 0.8),      unit: 'occurrences' },
-    { label: 'Avg Daily Duration',     value: '7.4',                unit: 'hrs' },
-    { label: 'Dept Size',              value: 10,                   unit: 'members' },
-  ]
+function SummaryTable({
+  period,
+  days,
+  summary,
+}: {
+  period: Period
+  days: number
+  summary: any
+}) {
+const rows = [
+  {
+    label: 'Total Working Days',
+    value: summary?.workingDays ?? 0,
+    unit: 'days',
+  },
+  {
+    label: 'Avg Attendance Rate',
+    value: summary?.attendanceRate ?? 0,
+    unit: '%',
+  },
+  {
+    label: 'Total Late Arrivals',
+    value: summary?.lateCount ?? 0,
+    unit: 'occurrences',
+  },
+  {
+    label: 'Avg Daily Duration',
+    value: summary?.avgDurationHours ?? 0,
+    unit: 'hrs',
+  },
+  {
+    label: 'Dept Size',
+    value: summary?.totalUsers ?? 0,
+    unit: 'members',
+  },
+]
   return (
     <div className="divide-y divide-border">
       {rows.map(({ label, value, unit }) => (
@@ -248,14 +275,202 @@ export default function AnalyticsPage() {
 
   const days = PERIOD_DAYS[period]
 
-  const { data: rateData    = [] } = useQuery({ queryKey: ['analytics-rate',     period], queryFn: async () => genDailyRate(Math.min(days, 60))    })
-  const { data: lateData    = [] } = useQuery({ queryKey: ['analytics-late',     period], queryFn: async () => genLateArrival(Math.min(days, 60))  })
-  const { data: durationData= [] } = useQuery({ queryKey: ['analytics-duration', period], queryFn: async () => genDuration(Math.min(days, 60))     })
-  const { data: heatmapData = [] } = useQuery({ queryKey: ['analytics-heatmap'],           queryFn: async () => genHeatmap()                        })
+  // const { data: rateData    = [] } = useQuery({ queryKey: ['analytics-rate',     period], queryFn: async () => genDailyRate(Math.min(days, 60))    })
+  const {
+  data: rateData = []
+} = useQuery({
+  queryKey: [
+    'analytics-rate',
+    period,
+    userFilter
+  ],
 
-  const avgRate     = useMemo(() => rateData.length ? +(rateData.reduce((a,d) => a + d.rate, 0) / rateData.length).toFixed(1) : 0, [rateData])
-  const avgDuration = useMemo(() => durationData.length ? +(durationData.reduce((a,d) => a + d.hours, 0) / durationData.length).toFixed(1) : 0, [durationData])
-  const totalLate   = useMemo(() => lateData.reduce((a,d) => a + d.count, 0), [lateData])
+  queryFn: async () => {
+
+    const res =
+      await axiosInstance.get(
+        '/analytics/admin/rate',
+        {
+          params: {
+            period,
+            userId:
+              userFilter
+          }
+        }
+      )
+
+    return res.data.map((d: any) => ({
+  date: new Date(d.date).toLocaleDateString(
+    'en-US',
+    {
+      month: 'short',
+      day: 'numeric',
+    }
+  ),
+  rate: Number(d.rate),
+}))
+  },
+})
+  // const { data: lateData    = [] } = useQuery({ queryKey: ['analytics-late',     period], queryFn: async () => genLateArrival(Math.min(days, 60))  })
+  const {
+  data: lateData = []
+} = useQuery({
+  queryKey: [
+    'analytics-late',
+    period,
+    userFilter
+  ],
+
+  queryFn: async () => {
+
+    const res =
+      await axiosInstance.get(
+        '/analytics/admin/late',
+        {
+          params: {
+            period,
+            userId:
+              userFilter
+          }
+        }
+      )
+
+    return res.data.map((d: any) => ({
+  date: new Date(d.date).toLocaleDateString(
+    'en-US',
+    {
+      month: 'short',
+      day: 'numeric',
+    }
+  ),
+  count: Number(d.count),
+}))
+  },
+})
+  // const { data: durationData= [] } = useQuery({ queryKey: ['analytics-duration', period], queryFn: async () => genDuration(Math.min(days, 60))     })
+  const {
+  data: durationData = []
+} = useQuery({
+  queryKey: [
+    'analytics-duration',
+    period,
+    userFilter
+  ],
+
+  queryFn: async () => {
+
+    const res =
+      await axiosInstance.get(
+        '/analytics/admin/duration',
+        {
+          params: {
+            period,
+            userId:
+              userFilter
+          }
+        }
+      )
+
+    return res.data.map((d: any) => ({
+  date: new Date(d.date).toLocaleDateString(
+    'en-US',
+    {
+      month: 'short',
+      day: 'numeric',
+    }
+  ),
+  hours: Number(d.hours),
+}))
+  },
+})
+  // const { data: heatmapData = [] } = useQuery({ queryKey: ['analytics-heatmap'],           queryFn: async () => genHeatmap()                        })
+  const {
+  data: heatmapData = []
+} = useQuery({
+  queryKey: [
+    'analytics-heatmap',
+    userFilter
+  ],
+
+  queryFn: async () => {
+
+    const res =
+      await axiosInstance.get(
+        '/analytics/admin/heatmap',
+        {
+          params: {
+            userId:
+              userFilter
+          }
+        }
+      )
+
+    return res.data.map((d: any) => ({
+  day: d.day,
+  hour: d.hour,
+  value: Number(d.value),
+}))
+  },
+})
+
+const {
+  data: topPerformers = []
+} = useQuery({
+  queryKey: [
+    'analytics-top'
+  ],
+
+  queryFn: async () => {
+
+    const res =
+      await axiosInstance.get(
+        '/analytics/admin/top-performers'
+      )
+
+    return res.data
+  },
+})
+
+const {
+  data: summary
+} = useQuery({
+  queryKey: [
+    'analytics-summary'
+  ],
+
+  queryFn: async () => {
+
+    const res =
+      await axiosInstance.get(
+        '/analytics/admin/summary'
+      )
+
+    return res.data
+  },
+})
+
+const {
+  data: userOptions = [],
+  isLoading
+} = useQuery({
+  queryKey: [
+    'user-options'
+  ],
+
+  queryFn: async () => {
+
+    const res =
+      await axiosInstance.get(
+        '/users/admin/options'
+      )
+
+    return res.data
+  },
+})
+
+  const avgRate     = useMemo(() => rateData.length ? +(rateData.reduce((a: any,d: any) => a + d.rate, 0) / rateData.length).toFixed(1) : 0, [rateData])
+  const avgDuration = useMemo(() => durationData.length ? +(durationData.reduce((a: any,d: any) => a + d.hours, 0) / durationData.length).toFixed(1) : 0, [durationData])
+  const totalLate   = useMemo(() => lateData.reduce((a: any,d: any) => a + d.count, 0), [lateData])
 
   // Thin out x-axis labels for readability
   const tickInterval = days <= 7 ? 0 : days <= 30 ? 4 : days <= 90 ? 9 : 29
@@ -289,15 +504,15 @@ export default function AnalyticsPage() {
             <SelectValue placeholder="Filter by user" />
           </SelectTrigger>
           <SelectContent>
-            {DEPT_USERS.map(u => (
-              <SelectItem key={u.value} value={u.value} className="text-xs">{u.label}</SelectItem>
+            {userOptions.map((u: any) => (
+              <SelectItem key={u.id} value={u.id} className="text-xs">{u.fullName}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         {userFilter !== 'all' && (
           <Badge variant="secondary" className="gap-1.5">
-            {DEPT_USERS.find(u => u.value === userFilter)?.label}
+            {userOptions.find((u: any) => u.id === userFilter)?.fullName}
             <button onClick={() => setUserFilter('all')} className="hover:text-foreground transition-colors">×</button>
           </Badge>
         )}
@@ -308,7 +523,7 @@ export default function AnalyticsPage() {
         <KpiCard title="Avg Attendance Rate" value={avgRate}     unit="%"  icon={CalendarCheck} color="teal"  trend={{ value: 2.1,  label: 'vs prev period' }} />
         <KpiCard title="Avg Daily Duration"  value={avgDuration} unit="hrs" icon={Clock}         color="green" trend={{ value: 0.3,  label: 'vs prev period' }} />
         <KpiCard title="Total Late Arrivals" value={totalLate}              icon={AlertTriangle}  color="amber" trend={{ value: -1.5, label: 'vs prev period' }} />
-        <KpiCard title="Dept Size"           value={10}          unit="members" icon={Users}     color="teal" />
+        <KpiCard title="Dept Size"           value={summary?.totalUsers?? 0}          unit="members" icon={Users}     color="teal" />
       </div>
 
       {/* ── Charts row 1: Attendance Rate + Heatmap ── */}
@@ -366,7 +581,7 @@ export default function AnalyticsPage() {
                 <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} />
                 <Tooltip content={<ChartTooltip unit=" late" />} />
                 <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                  {lateData.map((entry, i) => (
+                  {lateData.map((entry: any, i: any) => (
                     <Cell key={i} fill={entry.count >= 5 ? '#ef4444' : entry.count >= 3 ? '#f59e0b' : '#0d9488'} />
                   ))}
                 </Bar>
@@ -408,7 +623,7 @@ export default function AnalyticsPage() {
             <CardDescription className="text-xs mt-0.5">Attendance rate per team member · {period === 'today' ? 'today' : `last ${period}`}</CardDescription>
           </CardHeader>
           <CardContent>
-            <TopPerformersChart data={TOP_PERFORMERS} />
+            <TopPerformersChart data={topPerformers} />
           </CardContent>
         </Card>
 
@@ -420,8 +635,11 @@ export default function AnalyticsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
-            <SummaryTable period={period} days={days} />
-          </CardContent>
+<SummaryTable
+  period={period}
+  days={days}
+  summary={summary}
+/>          </CardContent>
         </Card>
       </div>
     </div>

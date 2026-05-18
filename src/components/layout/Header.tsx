@@ -26,25 +26,25 @@ export function Header() {
       {/* Right: search + notifications + avatar */}
       <div className="flex items-center gap-3">
         {/* Dept-scoped search */}
-        <div className="relative">
+        {/* <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
           <input
             type="text"
             placeholder="Search department…"
             className="input-base pl-8 w-52 h-8 text-xs"
           />
-        </div>
+        </div> */}
 
         {/* Notification bell */}
-        <button
+        {/* <button
           onClick={() => navigate(ROUTES.NOTIFICATIONS)}
           className="relative btn-ghost p-2"
           aria-label="Notifications"
-        >
-          <Bell size={17} />
+        > */}
+          {/* <Bell size={17} /> */}
           {/* Unread badge — wired up when notifications data is available */}
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand-400 ring-2 ring-surface" />
-        </button>
+          {/* <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand-400 ring-2 ring-surface" /> */}
+        {/* </button> */}
 
         {/* Avatar */}
         <button

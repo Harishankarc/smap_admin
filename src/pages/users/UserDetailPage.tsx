@@ -25,61 +25,37 @@ import {
   format, addMonths, subMonths, getDaysInMonth,
   getDay, startOfMonth,
 } from 'date-fns'
+import { axiosInstance } from '@/lib/axios'
 
 // ─── Mock detail data ─────────────────────────────────────────────────────────
 
-function getMockUserDetail(userId: string) {
-  const user = mockUsers.find(u => u.userId === userId) ?? mockUsers[0]
-  return {
-    ...user,
-    phone: '+91 98765 43210',
-    joinedAt: '2022-03-15',
-    employeeId: `EMP-${userId.padStart(4, '0')}`,
-  }
+
+
+type CalendarDay = {
+  day: number
+  status: AttendanceStatus | null
 }
 
-function getMockAttendanceLogs(userId: string) {
-  const attendance = mockTodayAttendance.find(u => u.userId === userId) ?? mockTodayAttendance[0]
-  return [
-    { logId: 'l1', type: 'entry' as const, time: attendance.entryTime ?? new Date(Date.now() - 4*3600000).toISOString(), camera: 'Main Entrance' },
-    { logId: 'l2', type: 'exit'  as const, time: new Date(Date.now() - 2*3600000).toISOString(),                          camera: 'Main Entrance' },
-    { logId: 'l3', type: 'entry' as const, time: new Date(Date.now() - 1.5*3600000).toISOString(),                        camera: 'Floor 2 Corridor' },
-  ]
+type AttendanceLog = {
+  logId: string
+  type: 'entry' | 'exit'
+  time: string
+  camera: string
 }
 
-function getMockAnalytics() {
-  return {
-    attendanceRate: 87,
-    avgDurationHours: 7.4,
-    totalPresent: 18,
-    totalAbsent: 3,
-    totalLate: 2,
-    trend: Array.from({ length: 30 }, (_, i) => ({
-      date: new Date(Date.now() - (29 - i) * 86400000)
-        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      hours: +(6.5 + Math.sin(i * 0.7) * 1.2 + (Math.random() - 0.5) * 0.6).toFixed(1),
-    })),
-    latePerWeek: [
-      { week: 'Wk 1', count: 0 },
-      { week: 'Wk 2', count: 1 },
-      { week: 'Wk 3', count: 0 },
-      { week: 'Wk 4', count: 1 },
-    ],
-  }
-}
 
 // ─── Calendar helpers ─────────────────────────────────────────────────────────
 
 const STATUS_DOT: Record<AttendanceStatus, string> = {
-  present:    'bg-emerald-500',
-  absent:     'bg-red-400',
-  late:       'bg-amber-400',
+  present: 'bg-emerald-500',
+  absent: 'bg-red-400',
+  late: 'bg-amber-400',
   early_exit: 'bg-orange-400',
-  on_leave:   'bg-sky-400',
+  on_leave: 'bg-sky-400',
 }
 
 function makeMockCalendar(year: number, month: number) {
-  const statuses: AttendanceStatus[] = ['present','present','present','late','absent','early_exit','present']
+  const statuses: AttendanceStatus[] = ['present', 'present', 'present', 'late', 'absent', 'early_exit', 'present']
   return Array.from({ length: getDaysInMonth(new Date(year, month)) }, (_, i) => ({
     day: i + 1,
     status: (i % 7 === 6 || i % 7 === 5)
@@ -90,15 +66,47 @@ function makeMockCalendar(year: number, month: number) {
 
 // ─── Attendance calendar ──────────────────────────────────────────────────────
 
-function AttendanceCalendar() {
-  const today    = new Date()
+function AttendanceCalendar({
+  userId
+}: {
+  userId: string
+}) {
+  const today = new Date()
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
-  const year   = viewDate.getFullYear()
-  const month  = viewDate.getMonth()
-  const days   = makeMockCalendar(year, month)
+  const year = viewDate.getFullYear()
+  const month = viewDate.getMonth()
+
+  const {
+    data: calendar = []
+  } = useQuery<CalendarDay[]>({
+    queryKey: [
+      'user-calendar',
+      userId,
+      year,
+      month
+    ],
+
+    queryFn: async () => {
+      const res =
+        await axiosInstance.get(
+          `/users/admin/${userId}/calendar`,
+          {
+            params: {
+              year,
+              month: month + 1
+            }
+          }
+        )
+
+      return res.data
+    },
+  })
+  const days = calendar
+
+
   const firstDow = getDay(startOfMonth(viewDate))
 
-  const counts = days.reduce((acc, d) => {
+  const counts = days.reduce((acc : any, d : any) => {
     if (d.status) acc[d.status] = (acc[d.status] ?? 0) + 1
     return acc
   }, {} as Record<AttendanceStatus, number>)
@@ -124,7 +132,7 @@ function AttendanceCalendar() {
 
       {/* Day headers */}
       <div className="grid grid-cols-7 text-center">
-        {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
           <div key={d} className="text-2xs font-semibold text-muted-foreground py-1">{d}</div>
         ))}
       </div>
@@ -132,7 +140,7 @@ function AttendanceCalendar() {
       {/* Cells */}
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: firstDow }).map((_, i) => <div key={`e-${i}`} />)}
-        {days.map(({ day, status }) => {
+        {days.map(({ day , status }) => {
           const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate()
           return (
             <div
@@ -156,7 +164,7 @@ function AttendanceCalendar() {
         {Object.entries(STATUS_DOT).map(([s, dot]) => (
           <div key={s} className="flex items-center gap-1">
             <span className={cn('w-2 h-2 rounded-full', dot)} />
-            <span className="text-2xs text-muted-foreground capitalize">{s.replace('_',' ')}</span>
+            <span className="text-2xs text-muted-foreground capitalize">{s.replace('_', ' ')}</span>
           </div>
         ))}
       </div>
@@ -166,18 +174,34 @@ function AttendanceCalendar() {
 
 function getStatusBg(status: AttendanceStatus) {
   return {
-    present:    'rgba(16,185,129,0.08)',
-    absent:     'rgba(239,68,68,0.08)',
-    late:       'rgba(245,158,11,0.08)',
+    present: 'rgba(16,185,129,0.08)',
+    absent: 'rgba(239,68,68,0.08)',
+    late: 'rgba(245,158,11,0.08)',
     early_exit: 'rgba(249,115,22,0.08)',
-    on_leave:   'rgba(14,165,233,0.08)',
+    on_leave: 'rgba(14,165,233,0.08)',
   }[status]
 }
 
 // ─── Logs tab ─────────────────────────────────────────────────────────────────
 
 function LogsTab({ userId }: { userId: string }) {
-  const logs = getMockAttendanceLogs(userId)
+  const {
+    data: logs = []
+  } = useQuery<AttendanceLog[]>({
+    queryKey: [
+      'user-logs',
+      userId
+    ],
+
+    queryFn: async () => {
+      const res =
+        await axiosInstance.get(
+          `/users/admin/${userId}/logs`
+        )
+
+      return res.data
+    },
+  })
   return (
     <div className="space-y-1">
       {logs.map((log, i) => (
@@ -188,7 +212,7 @@ function LogsTab({ userId }: { userId: string }) {
               log.type === 'entry' ? 'bg-emerald-500/10' : 'bg-sky-500/10',
             )}>
               {log.type === 'entry'
-                ? <LogIn  size={14} className="text-emerald-500" />
+                ? <LogIn size={14} className="text-emerald-500" />
                 : <LogOut size={14} className="text-sky-500" />}
             </div>
             <div className="flex-1">
@@ -220,18 +244,46 @@ function ChartTooltip({ active, payload, label, unit = '' }: any) {
   )
 }
 
-function AnalyticsTab() {
-  const data = getMockAnalytics()
+function AnalyticsTab({
+  userId
+}: {
+  userId: string
+}) {
+  const {
+    data = {
+      attendanceRate: 0,
+      avgDurationHours: 0,
+      totalPresent: 0,
+      totalAbsent: 0,
+      totalLate: 0,
+      trend: [],
+      latePerWeek: [],
+    },
+  } = useQuery({
+    queryKey: [
+      'user-analytics',
+      userId
+    ],
+
+    queryFn: async () => {
+      const res =
+        await axiosInstance.get(
+          `/users/admin/${userId}/analytics`
+        )
+
+      return res.data
+    },
+  }) ;
   return (
     <div className="space-y-5">
       {/* KPI row */}
       <div className="grid grid-cols-5 gap-3">
         {[
-          { label: 'Attendance Rate', value: `${data.attendanceRate}%`,   icon: TrendingUp,    color: 'text-teal-500'    },
-          { label: 'Avg Duration',    value: `${data.avgDurationHours}h`, icon: Clock,         color: 'text-green-500'   },
-          { label: 'Days Present',    value: data.totalPresent,            icon: CheckCircle2,  color: 'text-emerald-500' },
-          { label: 'Days Absent',     value: data.totalAbsent,             icon: XCircle,       color: 'text-red-500'     },
-          { label: 'Late Arrivals',   value: data.totalLate,               icon: AlertTriangle, color: 'text-amber-500'   },
+          { label: 'Attendance Rate', value: `${data.attendanceRate}%`, icon: TrendingUp, color: 'text-teal-500' },
+          { label: 'Avg Duration', value: `${data.avgDurationHours}h`, icon: Clock, color: 'text-green-500' },
+          { label: 'Days Present', value: data.totalPresent, icon: CheckCircle2, color: 'text-emerald-500' },
+          { label: 'Days Absent', value: data.totalAbsent, icon: XCircle, color: 'text-red-500' },
+          { label: 'Late Arrivals', value: data.totalLate, icon: AlertTriangle, color: 'text-amber-500' },
         ].map(({ label, value, icon: Icon, color }) => (
           <Card key={label}>
             <CardContent className="p-4 flex flex-col gap-1">
@@ -254,13 +306,13 @@ function AnalyticsTab() {
             <AreaChart data={data.trend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="userDurGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#0d9488" stopOpacity={0.2} />
+                  <stop offset="5%" stopColor="#0d9488" stopOpacity={0.2} />
                   <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} interval={4} />
-              <YAxis domain={[4,10]} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} tickFormatter={v=>`${v}h`} />
+              <YAxis domain={[4, 10]} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} tickFormatter={v => `${v}h`} />
               <Tooltip content={<ChartTooltip unit="h" />} />
               <Area type="monotone" dataKey="hours" stroke="#0d9488" strokeWidth={2} fill="url(#userDurGrad)" dot={false} activeDot={{ r: 3 }} />
             </AreaChart>
@@ -292,25 +344,59 @@ function AnalyticsTab() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function UserDetailPage() {
-  const { id }     = useParams<{ id: string }>()
-  const navigate   = useNavigate()
-  const qc         = useQueryClient()
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const qc = useQueryClient()
 
-  const { data: user, isLoading } = useQuery({
+  const {
+    data: user,
+    isLoading
+  } = useQuery({
     queryKey: ['user-detail', id],
-    queryFn:  async () => getMockUserDetail(id ?? '1'),
+
+    queryFn: async () => {
+      const res =
+        await axiosInstance.get(
+          `/users/admin/${id}`
+        )
+
+      return res.data
+    },
   })
 
   const toggleStatus = useMutation({
-    mutationFn: async (isActive: boolean) => {
-      await new Promise(r => setTimeout(r, 600))
-      return isActive
-    },
-    onSuccess: (isActive) => {
+    mutationFn:
+      async (
+        isActive: boolean
+      ) => {
+
+        const res =
+          await axiosInstance.patch(
+            `/users/admin/${id}/status`,
+            {
+              isActive
+            }
+          )
+
+        return res.data
+      },
+    onSuccess: (updated) => {
       qc.setQueryData(['user-detail', id], (old: typeof user) =>
-        old ? { ...old, isActive } : old
+        old
+          ? {
+            ...old,
+            isActive:
+              updated.isActive
+          }
+          : old
       )
-      toast(`User ${isActive ? 'activated' : 'deactivated'}`, 'success')
+      toast(
+        `User ${updated.isActive
+          ? 'activated'
+          : 'deactivated'
+        }`,
+        'success'
+      )
     },
   })
 
@@ -423,7 +509,7 @@ export default function UserDetailPage() {
               <CardDescription className="text-xs">Colour-coded attendance calendar</CardDescription>
             </CardHeader>
             <CardContent>
-              <AttendanceCalendar />
+              <AttendanceCalendar  userId={id ?? ''}/>
             </CardContent>
           </Card>
         </TabsContent>
@@ -443,7 +529,9 @@ export default function UserDetailPage() {
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-4">
-          <AnalyticsTab />
+          <AnalyticsTab
+            userId={id ?? ''}
+          />
         </TabsContent>
       </Tabs>
     </div>
