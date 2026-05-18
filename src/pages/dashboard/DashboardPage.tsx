@@ -20,6 +20,7 @@ import { userDetailPath } from '@/constants/routes'
 import { formatTime, relativeTime, formatDuration, getInitials } from '@/lib/utils'
 import { mockKpi, mockTodayAttendance, mockHourlyData, mockLiveFeed } from '@/lib/mockData'
 import type { UserAttendanceToday, RecognitionEvent } from '@/types'
+import { axiosInstance } from '@/lib/axios'
 
 const col = createColumnHelper<UserAttendanceToday>()
 
@@ -112,7 +113,10 @@ export default function DashboardPage() {
 
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['dashboard-kpi'],
-    queryFn: async () => mockKpi,
+    queryFn: async () => {
+      const res = await axiosInstance.get('/dashboard/admin/kpi')
+      return res.data
+    },
   })
   const { data: todayRows = [], isLoading: tableLoading } = useQuery({
     queryKey: ['dashboard-today'],
@@ -162,7 +166,7 @@ export default function DashboardPage() {
 
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard title="Present Today"      value={kpi?.presentToday ?? 0}      icon={Users}         color="green"  loading={kpiLoading} trend={{ value: 4, label: 'vs yesterday' }} />
+        <StatCard title="Present Today"      value={kpi?.presentToday ?? 0}      icon={Users}         color="green"  loading={kpiLoading} />
         <StatCard title="Absent Today"       value={kpi?.absentToday ?? 0}       icon={UserX}         color="red"    loading={kpiLoading} />
         <StatCard title="Late Arrivals"      value={kpi?.lateArrivals ?? 0}      icon={Clock}         color="amber"  loading={kpiLoading} />
         <StatCard title="Unknown Detections" value={kpi?.unknownDetections ?? 0} icon={AlertTriangle} color="purple" loading={kpiLoading} onClick={() => navigate('/unknown-faces')} />

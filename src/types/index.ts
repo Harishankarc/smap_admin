@@ -8,7 +8,7 @@ export interface AdminUserModel {
   photoUrl?: string
   departmentId: string
   departmentName: string
-  role: 'admin'
+  role: string
   lastLogin: string
 }
 

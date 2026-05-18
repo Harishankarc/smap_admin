@@ -3,10 +3,10 @@ import { API } from '@/constants/api'
 import { useAuthStore } from '@/stores/authStore'
 
 export const axiosInstance = axios.create({
-  baseURL: 'http://localhost:7000/',
+  baseURL: 'https://finale-extrude-poster.ngrok-free.dev/api',
   timeout: 15_000,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json','ngrok-skip-browser-warning': 'true'},
 })
 
 // Attach access token to every request
@@ -31,8 +31,20 @@ function processQueue(error: unknown, token: string | null = null) {
 }
 
 axiosInstance.interceptors.response.use(
-  (res) => res,
+  (response) => {
+    console.log(
+      `✅ [${response.config.method?.toUpperCase()}] ${response.config.url}`,
+      '| Status:', response.status,
+      '| Data:', response.data
+    );
+    return response;
+  },
   async (error) => {
+    console.log(
+      `❌ [${error.config?.method?.toUpperCase()}] ${error.config?.url}`,
+      '| Status:', error.response?.status,
+      '| Data:', error.response?.data
+    );
     const original = error.config
 
     if (error.response?.status === 401 && !original._retry) {

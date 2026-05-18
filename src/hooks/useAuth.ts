@@ -20,7 +20,7 @@ interface LoginResponse {
 }
 
 async function adminLogin(payload: LoginPayload): Promise<LoginResponse> {
-  const { data } = await axiosInstance.post<LoginResponse>('/api/auth/admin/login', {
+  const { data } = await axiosInstance.post<LoginResponse>('/auth/admin/login', {
     email: payload.email,
     password: payload.password,
   })
